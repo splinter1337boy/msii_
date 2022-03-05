@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 
-std::string simptoni[16] = {
+std::string simptomi[16] = {
 	"Общее недомогание",
 	"Сухость, першение",
 	"Кашель сначала сухой, затем мокрый",
@@ -41,29 +41,29 @@ public:
 
 };
 
-class Simpton {
+class Simptom {
 private:
 	int m_length;
 	std::string* m_arr;
 
 public:
-	Simpton() {
+	Simptom() {
 		m_length = 0;
 		m_arr = NULL;
 	}
 
-	Simpton(int length) : m_length(length) {
+	Simptom(int length) : m_length(length) {
 		if(m_length > 0) {
 			if(m_length <= 16) {
 				m_arr = new std::string[m_length];
 				for(int i = 0; i < m_length; i++) {
-					m_arr[i] = simptoni[i];
+					m_arr[i] = simptomi[i];
 				}
 			} else {
 				int m_size = 16;
 				m_arr = new std::string[m_length];
 				for(int i = 0; i < m_size; i++) {
-					m_arr[i] = simptoni[i];
+					m_arr[i] = simptomi[i];
 				}
 			}	
 		} else {
@@ -72,7 +72,7 @@ public:
 		}
 	}
 
-	Simpton(Simpton& o) {
+	Simptom(Simptom& o) {
 		m_length = o.m_length;
 		m_arr = new std::string[m_length];
 
@@ -81,7 +81,7 @@ public:
 		}
 	}
 
-	Simpton& operator = (Simpton& s) {
+	Simptom& operator = (Simptom& s) {
 		if(this == &s) { return *this; }
 		
 		delete[] m_arr;
@@ -108,56 +108,66 @@ public:
 	std::string* getArray() { return m_arr; }
 };
 
-std::ostream& operator << (std::ostream& out, Simpton& s) {
+std::ostream& operator << (std::ostream& out, Simptom& s) {
 	for(int i = 0; i < s.getLength(); i++) {
-		out << "Симптон: " << s[i] << "\n";
+		out << "Симптом: " << s[i] << "\n";
 	}
 	
 	return out;
 }
 
 
-class TableOfSimptons : public Simpton {
+class TableOfSimptoms : public Simptom {
 private:
 	int* m_code;
-	Simpton* s;
+	Simptom* s;
 
 public:
-	TableOfSimptons() : Simpton() {
+	TableOfSimptoms() : Simptom() {
 		m_code = NULL;
 		s = NULL;
 	}
 
-	TableOfSimptons(Simpton& s) {
+	TableOfSimptoms(Simptom& s) {
 		int length = s.getLength();
 		m_code = new int[length];
-		this->s = new Simpton(s);
+		this->s = new Simptom(s);
 		for(int i = 0; i < length; i++) {
 			m_code[i] = i;
 		}
 	}
 
-	TableOfSimptons(TableOfSimptons& o) {
-		int length = o.
-		m_code = new int[m_length];
-		s = new Simpton(o.getSimpton());
+	TableOfSimptoms(TableOfSimptoms& o) {
+		int length = o.s->getLength();
+		m_code = new int[length];
+		s = new Simptom(o.getSimptom());
 
-		for(int i = 0; i < m_length; i++) {
+		for(int i = 0; i < length; i++) {
 			m_code[i] = o.m_code[i];
 		}
 	}
 
-	~TableOfSimptons() { delete s; delete[] m_code; }
+	int& operator[] (const int index) {
+		if(index >= 0 && index < s->getLength()) {
+			return m_code[index];
+		}
+
+		throw ArrayException(std::to_string((_ULonglong)index));
+	}	
+
+	~TableOfSimptoms() { delete s; delete[] m_code; }
 
 	int* getCodes() { return m_code; }
-	Simpton& getSimpton() { return *s; }
+	Simptom& getSimptom() { return *s; }
 };
 
-std::ostream& operator << (std::ostream& out, TableOfSimptons& ts) {
-	out << "Таблица Симптонов: \n";
+std::ostream& operator << (std::ostream& out, TableOfSimptoms& ts) {
+	out << "Таблица Симптомов: \n";
 
-	for(int i = 0; i < ts.)
-
+	for(int i = 0; i < ts.getSimptom().getLength(); i++) {
+		out << "ID: " << ts[i] << "; Симптом: " << ts.getSimptom() << "\n";
+	}
+		
 	return out;
 }
 
@@ -166,9 +176,11 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	setlocale(LC_ALL, "Russian"); // задаём русский текст
     
-	Simpton s(16);
+	Simptom s(16);
 
-	std::cout << s << "\n";
+	TableOfSimptoms tbl(s);
+
+	std::cout << tbl << "\n";
 
 	getch();
 	return 0;
