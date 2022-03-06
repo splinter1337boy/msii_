@@ -43,75 +43,37 @@ public:
 
 class Simptom {
 private:
-	int m_length;
-	std::string* m_arr;
+	std::string m_name;
 
 public:
-	Simptom() {
-		m_length = 0;
-		m_arr = NULL;
-	}
-
-	Simptom(int length) : m_length(length) {
-		if(m_length > 0) {
-			if(m_length <= 16) {
-				m_arr = new std::string[m_length];
-				for(int i = 0; i < m_length; i++) {
-					m_arr[i] = simptomi[i];
-				}
-			} else {
-				int m_size = 16;
-				m_arr = new std::string[m_length];
-				for(int i = 0; i < m_size; i++) {
-					m_arr[i] = simptomi[i];
-				}
-			}	
-		} else {
-			m_length = 0;
-			m_arr = NULL;
-		}
+	Simptom(std::string name = "") : m_name(name) {
 	}
 
 	Simptom(Simptom& o) {
-		m_length = o.m_length;
-		m_arr = new std::string[m_length];
-
-		for(int i = 0; i < m_length; i++) {
-			m_arr[i] = o.m_arr[i];
-		}
+		m_name = o.m_name;
 	}
 
+	virtual ~Simptom() {}
+
 	Simptom& operator = (Simptom& s) {
-		if(this == &s) { return *this; }
-		
-		delete[] m_arr;
+		if(this == &s) return *this;
 
-		m_length = s.m_length;
-		m_arr = new std::string[m_length];
-
-		for(int i = 0; i < m_length; i++) {
-			m_arr[i] = s.m_arr[i];
-		}
+		m_name = s.m_name;
 		
+		return *this;
+	} // протестить, попробовать убрать этот метод
+
+	Simptom& operator = (std::string name) {
+		m_name = name;
+
 		return *this;
 	}
 
-	std::string& operator[] (const int index) {
-		if(index >= 0 && index < m_length) {
-			return m_arr[index];
-		}
-
-		throw ArrayException(std::to_string((_ULonglong)index));
-	}
-
-	int getLength() { return m_length; }
-	std::string* getArray() { return m_arr; }
+	std::string getSimptom() { return m_name; }
 };
 
 std::ostream& operator << (std::ostream& out, Simptom& s) {
-	for(int i = 0; i < s.getLength(); i++) {
-		out << "Симптом: " << s[i] << "\n";
-	}
+	out << s.getSimptom() << "\n";
 	
 	return out;
 }
@@ -120,52 +82,74 @@ std::ostream& operator << (std::ostream& out, Simptom& s) {
 class TableOfSimptoms : public Simptom {
 private:
 	int* m_code;
-	Simptom* s;
+	int m_length;
+	int m_maxLength;
+	Simptom** s;
 
 public:
 	TableOfSimptoms() : Simptom() {
 		m_code = NULL;
 		s = NULL;
+		m_length = 0;
+		m_maxLength = 100;
 	}
 
-	TableOfSimptoms(Simptom& s) {
-		int length = s.getLength();
-		m_code = new int[length];
-		this->s = new Simptom(s);
-		for(int i = 0; i < length; i++) {
-			m_code[i] = i;
+	TableOfSimptoms(int length) : m_length(length) {
+		if(m_length > 0) {
+			if(m_length <= 16) {
+				s = new Simptom*[m_length];
+				m_code = new int[m_length];
+				for(int i = 0; i < m_length; i++) {
+					s[i] = new Simptom(simptomi[i]);
+					m_code[i] = i;
+				}
+			} else {
+				int m_size = 16;
+				s = new Simptom*[m_length];
+				m_code = new int[m_length];
+				for(int i = 0; i < m_size; i++) {
+					s[i] = new Simptom(simptomi[i]);
+					m_code[i] = i;
+				}
+			}
+		} else {
+			m_code = NULL;
+			m_length = 0;
+			m_maxLength = 10;
+			s = NULL;
 		}
 	}
 
 	TableOfSimptoms(TableOfSimptoms& o) {
-		int length = o.s->getLength();
-		m_code = new int[length];
-		s = new Simptom(o.getSimptom());
-
-		for(int i = 0; i < length; i++) {
-			m_code[i] = o.m_code[i];
+		int m_length = o.m_length;
+		m_code = new int[m_length];
+		s = new Simptom*[m_length];
+		for(int i = 0; i < m_length; i++) {
+			s[i] = new Simptom(o[i]);
 		}
 	}
 
-	int& operator[] (const int index) {
-		if(index >= 0 && index < s->getLength()) {
-			return m_code[index];
+
+	~TableOfSimptoms() { for(int i = 0; i < m_length; i++) delete s[i]; delete[] s; delete[] m_code; }
+
+	int* getCodes() { return m_code; }
+
+	int getLength() { return m_length; }
+	
+	Simptom& operator[] (const int index) { 
+		if(index >= 0 && index < m_length) {
+			return *s[index];
 		}
 
 		throw ArrayException(std::to_string((_ULonglong)index));
-	}	
-
-	~TableOfSimptoms() { delete s; delete[] m_code; }
-
-	int* getCodes() { return m_code; }
-	Simptom& getSimptom() { return *s; }
+	}
 };
 
 std::ostream& operator << (std::ostream& out, TableOfSimptoms& ts) {
 	out << "Таблица Симптомов: \n";
 
-	for(int i = 0; i < ts.getSimptom().getLength(); i++) {
-		out << "ID: " << ts[i] << "; Симптом: " << ts.getSimptom() << "\n";
+	for(int i = 0; i < ts.getLength(); i++) {
+		out << "Код: " << ts.getCodes()[i] << ", Симптом: " << ts[i] << "\n";
 	}
 		
 	return out;
@@ -175,14 +159,21 @@ std::ostream& operator << (std::ostream& out, TableOfSimptoms& ts) {
 int _tmain(int argc, _TCHAR* argv[])
 {
 	setlocale(LC_ALL, "Russian"); // задаём русский текст
-    
-	Simptom s(16);
 
-	TableOfSimptoms tbl(s);
+	try {
 
-	std::cout << tbl << "\n";
+		TableOfSimptoms tbl(16);
 
-	getch();
+		std::cout << tbl << "\n";
+
+		getch();
+	
+	} catch(ArrayException& e) {
+		std::cerr << "Overflow, index " << e.what() << "\n";
+	}
+	
+
+	
 	return 0;
 }
 
