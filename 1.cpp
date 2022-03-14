@@ -44,13 +44,15 @@ public:
 class Simptom {
 private:
 	std::string m_name;
+	int m_code;
 
 public:
-	Simptom(std::string name = "") : m_name(name) {
+	Simptom(std::string name = "", int code = 0) : m_name(name), m_code(code) {
 	}
 
 	Simptom(Simptom& o) {
 		m_name = o.m_name;
+		m_code = o.m_code;
 	}
 
 	virtual ~Simptom() {}
@@ -59,6 +61,7 @@ public:
 		if(this == &s) return *this;
 
 		m_name = s.m_name;
+		m_code = s.m_code;
 		
 		return *this;
 	} // протестить, попробовать убрать этот метод
@@ -70,6 +73,7 @@ public:
 	}
 
 	std::string getSimptom() { return m_name; }
+	int getCode() { return m_code; }
 };
 
 std::ostream& operator << (std::ostream& out, Simptom& s) {
@@ -78,8 +82,14 @@ std::ostream& operator << (std::ostream& out, Simptom& s) {
 	return out;
 }
 
+std::ostream& operator << (std::ostream& out, Simptom* s) {
+	out << s->getSimptom() << "\n";
+	
+	return out;
+}
 
-class TableOfSimptoms : public Simptom {
+
+class Table : public Simptom {
 private:
 	int* m_code;
 	int m_length;
@@ -87,30 +97,30 @@ private:
 	Simptom** s;
 
 public:
-	TableOfSimptoms() : Simptom() {
+	Table() : Simptom() {
 		m_code = NULL;
 		s = NULL;
 		m_length = 0;
 		m_maxLength = 10;
 	}
 
-	TableOfSimptoms(int length) : m_length(length) {
+	Table(int length) : m_length(length) {
 		if(m_length > 0) {
 			m_maxLength = m_length * 2;
 			if(m_length <= 16) {
 				s = new Simptom*[m_length];
 				m_code = new int[m_length];
 				for(int i = 0; i < m_length; i++) {
-					s[i] = new Simptom(simptomi[i]);
 					m_code[i] = i;
+					s[i] = new Simptom(simptomi[i], m_code[i]);
 				}
 			} else {
 				int m_size = 16;
 				s = new Simptom*[m_length];
 				m_code = new int[m_length];
 				for(int i = 0; i < m_size; i++) {
-					s[i] = new Simptom(simptomi[i]);
 					m_code[i] = i;
+					s[i] = new Simptom(simptomi[i], m_code[i]);
 				}
 			}
 		} else {
@@ -121,7 +131,7 @@ public:
 		}
 	}
 
-	TableOfSimptoms(TableOfSimptoms& o) {
+	Table(Table& o) {
 		m_length = o.m_length;
 		m_maxLength = o.m_maxLength;
 		m_code = new int[m_length];
@@ -133,33 +143,67 @@ public:
 	}
 
 
-	TableOfSimptoms* addSimptom(std::string str) {
+	Table* addSimptom(std::string str) {
 		if(m_length > m_maxLength) { increaseSizeOfArray(); }
+		Simptom* addS = new Simptom(str);
 
-		s[m_length] = &Simptom(str);
+		s[m_length] = addS;
 		m_code[m_length] = m_length;
 		m_length++;
+
+		sortCodesByInsertionMethod();
+		sortSimptomBySelectionMethod();
 
 		return this;
 	}
 
-	TableOfSimptoms* addSimptom(Simptom* simp) {
+	Table* addSimptom(Simptom* simp) {
 		if(m_length > m_maxLength) { increaseSizeOfArray(); }
 
 		s[m_length] = simp;
 		m_code[m_length] = m_length;
 		m_length++;
 
+		sortCodesByInsertionMethod();
+		sortSimptomBySelectionMethod();
+
 		return this;
 	}
 
-	void sortCodes() {
-		
+	void sortCodesByInsertionMethod() {
+		int x;
+		for(int i = 1; i < m_length; i++) {
+			x = m_code[i];
+			int j = i - 1;
+			while(j >= 0 && x < m_code[j]) {
+				m_code[j + 1] = m_code[j];
+				j--;
+			}
+			m_code[j + 1] = x;
+		}
+	}
+
+	void sortSimptomBySelectionMethod() {
+		int k;
+		Simptom* x;
+		for(int i = 0; i < m_length; i++) {
+			k = i;
+			x = s[i];
+			for(int j = i + 1; j < m_length; j++) {
+				if(s[j] < x) {
+					k = j;
+					x = s[j];
+				}
+			}
+
+			s[k] = s[i];
+			s[i] = x;
+		}
 	}
 
 
 	void deleteSimptom() {
-		
+		deleteSimptom(1);
 	}
 
 	void deleteSimptom(const int num) {
@@ -169,11 +213,14 @@ public:
 			int code = m_code[num - 1];
 			for(int i = num - 1; i < m_length - 1; i++) {
 				s[i] = s[i + 1];
-				m_code[i] = m_code[i + 1]; // доделать 
+				m_code[i] = m_code[i + 1];
 			}
 			s[m_length - 1] = temp;
 			m_code[m_length - 1] = code;
 			m_length--;
+
+			sortCodesByInsertionMethod();
+			sortSimptomBySelectionMethod();
 			
 			if((m_length < m_maxLength / 2) && (m_maxLength > 1)) {
 				reduceSizeOfArray();
@@ -184,7 +231,7 @@ public:
 	}
 
 
-	~TableOfSimptoms() { for(int i = 0; i < m_length; i++) delete s[i]; delete[] s; delete[] m_code; }
+	~Table() { for(int i = 0; i < m_length; i++) delete s[i]; delete[] s; delete[] m_code; }
 
 	int* getCodes() { return m_code; }
 
@@ -233,9 +280,7 @@ public:
 
 };
 
-std::ostream& operator << (std::ostream& out, TableOfSimptoms& ts) {
-	out << "Таблица Симптомов: \n";
-
+std::ostream& operator << (std::ostream& out, Table& ts) {
 	for(int i = 0; i < ts.getLength(); i++) {
 		out << "Код: " << ts.getCodes()[i] << ", Симптом: " << ts[i] << "\n";
 	}
@@ -249,22 +294,16 @@ int _tmain(int argc, _TCHAR* argv[])
 	setlocale(LC_ALL, "Russian"); // задаём русский текст
 
 	try {
-		Simptom* s = new Simptom("test");
-		TableOfSimptoms tbl(16);
+		Table tbl(16);
 
-		tbl.deleteSimptom(2);
-		tbl.deleteSimptom(3);
-		tbl.deleteSimptom(4);
-		tbl.deleteSimptom(5);
-		tbl.deleteSimptom(6);
-
-		tbl.addSimptom(s);
 		std::cout << tbl << "\n";
 
 		getch();
 	
 	} catch(ArrayException& e) {
 		std::cerr << "Overflow, index " << e.what() << "\n";
+	} catch(std::exception& e) {
+		std::cerr << e.what() << "\n";
 	}
 	
 
