@@ -89,39 +89,79 @@ std::ostream& operator << (std::ostream& out, Simptom* s) {
 }
 
 
-class Table : public Simptom {
+class Diagnoz {
+private:
+	std::string m_name;
+	int m_code;
+
+public:
+	Diagnoz(std::string name = "", int code = 0) : m_name(name), m_code(code) {
+	}
+
+	Diagnoz(Diagnoz& o) {
+		m_name = o.m_name;
+		m_code = o.m_code;
+	}
+
+	virtual ~Diagnoz() {}
+
+	Diagnoz& operator = (Diagnoz& s) {
+		if(this == &s) return *this;
+
+		m_name = s.m_name;
+		m_code = s.m_code;
+		
+		return *this;
+	} // протестить, попробовать убрать этот метод
+
+	Diagnoz& operator = (std::string name) {
+		m_name = name;
+
+		return *this;
+	}
+
+	std::string getDiagnoz() { return m_name; }
+	int getCode() { return m_code; }
+};
+
+
+std::ostream& operator << (std::ostream& out, Diagnoz& s) {
+	out << s.getDiagnoz() << "\n";
+	
+	return out;
+}
+
+std::ostream& operator << (std::ostream& out, Diagnoz* s) {
+	out << s->getDiagnoz() << "\n";
+	
+	return out;
+}
+
+
+template<typename T>
+class Table {
 private:
 	int* m_code;
 	int m_length;
 	int m_maxLength;
-	Simptom** s;
+	T** s;
 
 public:
-	Table() : Simptom() {
+	Table() {
 		m_code = NULL;
 		s = NULL;
 		m_length = 0;
 		m_maxLength = 10;
 	}
 
-	Table(int length) : m_length(length) {
+	Table(std::string* arr, int length) : m_length(length) {
 		if(m_length > 0) {
 			m_maxLength = m_length * 2;
-			if(m_length <= 16) {
-				s = new Simptom*[m_length];
-				m_code = new int[m_length];
-				for(int i = 0; i < m_length; i++) {
-					m_code[i] = i;
-					s[i] = new Simptom(simptomi[i], m_code[i]);
-				}
-			} else {
-				int m_size = 16;
-				s = new Simptom*[m_length];
-				m_code = new int[m_length];
-				for(int i = 0; i < m_size; i++) {
-					m_code[i] = i;
-					s[i] = new Simptom(simptomi[i], m_code[i]);
-				}
+			s = new T*[m_length];
+			m_code = new int[m_length];
+			for(int i = 0; i < m_length; i++) {
+				m_code[i] = i;
+				s[i] = new T(arr[i], m_code[i]);
 			}
 		} else {
 			m_code = NULL;
@@ -135,19 +175,19 @@ public:
 		m_length = o.m_length;
 		m_maxLength = o.m_maxLength;
 		m_code = new int[m_length];
-		s = new Simptom*[m_length];
+		s = new T*[m_length];
 		for(int i = 0; i < m_length; i++) {
-			s[i] = new Simptom(o[i]);
+			s[i] = new T(o[i]);
 			m_code[i] = o.m_code[i];
 		}
 	}
 
 
-	Table* addSimptom(std::string str) {
+	Table* addItem(std::string str) {
 		if(m_length > m_maxLength) { increaseSizeOfArray(); }
-		Simptom* addS = new Simptom(str);
+		T* add = new T(str);
 
-		s[m_length] = addS;
+		s[m_length] = add;
 		m_code[m_length] = m_length;
 		m_length++;
 
@@ -157,10 +197,10 @@ public:
 		return this;
 	}
 
-	Table* addSimptom(Simptom* simp) {
+	Table* addItem(T* t) {
 		if(m_length > m_maxLength) { increaseSizeOfArray(); }
 
-		s[m_length] = simp;
+		s[m_length] = t;
 		m_code[m_length] = m_length;
 		m_length++;
 
@@ -185,7 +225,7 @@ public:
 
 	void sortSimptomBySelectionMethod() {
 		int k;
-		Simptom* x;
+		T* x;
 		for(int i = 0; i < m_length; i++) {
 			k = i;
 			x = s[i];
@@ -202,13 +242,13 @@ public:
 	}
 
 
-	void deleteSimptom() {
-		deleteSimptom(1);
+	void deleteItem() {
+		deleteItem(1);
 	}
 
-	void deleteSimptom(const int num) {
+	void deleteItem(const int num) {
 		if(num > 0 && num <= m_length) {
-			Simptom* temp = s[num - 1];
+			T* temp = s[num - 1];
 			delete s[num - 1];
 			int code = m_code[num - 1];
 			for(int i = num - 1; i < m_length - 1; i++) {
@@ -231,7 +271,7 @@ public:
 	}
 
 
-	~Table() { for(int i = 0; i < m_length; i++) delete s[i]; delete[] s; delete[] m_code; }
+	virtual ~Table() { for(int i = 0; i < m_length; i++) delete s[i]; delete[] s; delete[] m_code; }
 
 	int* getCodes() { return m_code; }
 
@@ -239,7 +279,7 @@ public:
 
 	int& getMaxLength() { return m_maxLength; }
 	
-	Simptom& operator[] (const int index) { 
+	T& operator[] (const int index) { 
 		if(index >= 0 && index < m_length) {
 			return *s[index];
 		}
@@ -248,12 +288,12 @@ public:
 	}
 
 	void increaseSizeOfArray() {
-		Simptom** temp = new Simptom*[m_length];
+		T** temp = new T*[m_length];
 		for(int i = 0; i < m_length; i++) {
 			temp[i] = s[i];
 		}
 		delete[] s;
-		s = new Simptom*[m_maxLength * 2];
+		s = new T*[m_maxLength * 2];
 		for(int i = 0; i < m_length; i++) {
 			s[i] = temp[i];
 		}
@@ -263,12 +303,12 @@ public:
 	}
 
 	void reduceSizeOfArray() {
-		Simptom** temp = new Simptom*[m_length];
+		T** temp = new T*[m_length];
 		for(int i = 0; i < m_length; i++) {
 			temp[i] = s[i];
 		}
 		delete[] s;
-		s = new Simptom*[m_maxLength / 2];
+		s = new T*[m_maxLength / 2];
 		for(int i = 0; i < m_length; i++) {
 			s[i] = temp[i];
 		}
@@ -280,7 +320,7 @@ public:
 
 };
 
-std::ostream& operator << (std::ostream& out, Table& ts) {
+std::ostream& operator << (std::ostream& out, Table<Simptom>& ts) {
 	for(int i = 0; i < ts.getLength(); i++) {
 		out << "Код: " << ts.getCodes()[i] << ", Симптом: " << ts[i] << "\n";
 	}
@@ -288,15 +328,73 @@ std::ostream& operator << (std::ostream& out, Table& ts) {
 	return out;
 }
 
+std::ostream& operator << (std::ostream& out, Table<Diagnoz>& ts) {
+	for(int i = 0; i < ts.getLength(); i++) {
+		out << "Код: " << ts.getCodes()[i] << ", Диагноз: " << ts[i] << "\n";
+	}
+		
+	return out;
+}
+
+template<typename T1, typename T2>
+class TableMatches {
+	private:
+	int** m_codes;
+	int m_rows;
+	int m_cols;
+
+public:
+	TableMatches(Table<T1>& t1, Table<T2>& t2) {
+		m_rows = t1.getLength();
+		m_cols = t2.getLength();
+		m_codes = new int*[m_rows];
+		for(int i = 0; i < t1.getLength(); i++) {
+			m_codes[i] = new int[m_cols];
+			for(int j = 0; j < t2.getLength(); j++) {
+				m_codes[i][j] = t1[i].getCode();
+			}
+		}
+	}
+
+	int** getCodes() { return m_codes; }
+	int getLengthSimptom() { return m_rows; }
+	int getLengthDiagnoz() { return m_cols; }
+
+	~TableMatches() {
+		delete[] m_codes; 
+	}
+};
+
+
+std::ostream& operator << (std::ostream& out, TableMatches<Simptom, Diagnoz>& tblM) {
+	for(int i = 0; i < tblM.getLengthSimptom(); i++) {
+		for(int j = 0; j < tblM.getLengthDiagnoz(); j++) {
+			out << tblM.getCodes()[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+	return out;
+}
+
+
+
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	setlocale(LC_ALL, "Russian"); // задаём русский текст
 
 	try {
-		Table tbl(16);
+		Table<Simptom> tblS(simptomi, 16);
+		Table<Diagnoz> tblD(diagnoz, 4);
 
-		std::cout << tbl << "\n";
+		std::cout << "Таблица Симптомов: \n\n" << tblS << "\n";
+		std::cout << "Таблица Диагнозов: \n\n" << tblD << "\n";
+
+		TableMatches<Simptom, Diagnoz> tblMatches(tblS, tblD);
+
+		std::cout << tblMatches;
 
 		getch();
 	
