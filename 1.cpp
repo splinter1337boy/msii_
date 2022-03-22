@@ -182,30 +182,33 @@ public:
 		}
 	}
 
-
-	Table* addItem(std::string str) {
-		if(m_length > m_maxLength) { increaseSizeOfArray(); }
-		T* add = new T(str);
-
-		s[m_length] = add;
-		m_code[m_length] = m_length;
-		m_length++;
-
-		sortCodesByInsertionMethod();
-		sortSimptomBySelectionMethod();
-
-		return this;
-	}
-
 	Table* addItem(T* t) {
-		if(m_length > m_maxLength) { increaseSizeOfArray(); }
+		int code = t->getCode();
 
-		s[m_length] = t;
-		m_code[m_length] = m_length;
-		m_length++;
-
-		sortCodesByInsertionMethod();
-		sortSimptomBySelectionMethod();
+		if(m_length > 0) {
+			if(m_length < m_maxLength) {
+				int ind = -1;
+				for(int i = 0; i < m_length; i++) {
+					if(code == s[i]->getCode()) { ind = i; break; }
+				}
+				if(ind == -1) {
+					int f = 0;
+					for(int i = m_length - 1; i >= 0; i--) {
+						if(code > s[i]->getCode()) { s[i + 1] = s[i]; s[i] = NULL; s[i] = new T(t); f = 1; break; }
+						else { s[i + 1] = s[i]; }
+					}
+					if(f == 0) { s[0] = NULL; s[0] = new T(t); }
+					m_length++;
+				} else {
+					delete s[ind]; s[ind] = new T(t);
+				}
+			} else {
+				increaseSizeOfArray();
+			}
+		} else {
+			s[i] = new T(t);
+			m_length++;
+		}
 
 		return this;
 	}
@@ -322,7 +325,7 @@ public:
 
 std::ostream& operator << (std::ostream& out, Table<Simptom>& ts) {
 	for(int i = 0; i < ts.getLength(); i++) {
-		out << "Код: " << ts.getCodes()[i] << ", Симптом: " << ts[i] << "\n";
+		out << "Код: " << ts.getCodes()[i] + 1 << ", Симптом: " << ts[i] << "\n";
 	}
 		
 	return out;
@@ -330,7 +333,7 @@ std::ostream& operator << (std::ostream& out, Table<Simptom>& ts) {
 
 std::ostream& operator << (std::ostream& out, Table<Diagnoz>& ts) {
 	for(int i = 0; i < ts.getLength(); i++) {
-		out << "Код: " << ts.getCodes()[i] << ", Диагноз: " << ts[i] << "\n";
+		out << "Код: " << ts.getCodes()[i] + 1 << ", Диагноз: " << ts[i] << "\n";
 	}
 		
 	return out;
@@ -386,15 +389,24 @@ int _tmain(int argc, _TCHAR* argv[])
 	setlocale(LC_ALL, "Russian"); // задаём русский текст
 
 	try {
+		Simptom* test = new Simptom("jopa");
+
 		Table<Simptom> tblS(simptomi, 16);
-		Table<Diagnoz> tblD(diagnoz, 4);
+
+		tblS.deleteItem(3);
+		tblS.deleteItem(4);
 
 		std::cout << "Таблица Симптомов: \n\n" << tblS << "\n";
-		std::cout << "Таблица Диагнозов: \n\n" << tblD << "\n";
 
-		TableMatches<Simptom, Diagnoz> tblMatches(tblS, tblD);
+		//Table<Diagnoz> tblD(diagnoz, 4);
 
-		std::cout << tblMatches;
+		//std::cout << "Таблица Симптомов: \n\n" << tblS << "\n";
+		//std::cout << "Таблица Диагнозов: \n\n" << tblD << "\n";
+
+		//TableMatches<Simptom, Diagnoz> tblMatches(tblS, tblD);
+
+		//std::cout << tblMatches;
+		delete test;
 
 		getch();
 	
@@ -412,3 +424,4 @@ int _tmain(int argc, _TCHAR* argv[])
 
 // поработать с кодом, чтобы были отсортированы при удалении симптома(вторая лаба у поляка) (золотое сечение, дихотомия)
 
+// разобраться с deleteItem
